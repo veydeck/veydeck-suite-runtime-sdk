@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["eventId", "eventCode", "eventLabel", "outcome", "impact", "parameters"],
+  "properties": {
+    "eventId": { "type": "string", "format": "uuid" },
+    "operationContextId": { "type": ["string", "null"], "minLength": 1, "maxLength": 128 },
+    "eventCode": { "type": "string", "pattern": "^[a-z][a-z0-9_]{2,63}$" },
+    "eventLabel": {
+      "type": "object",
+      "required": ["zhCn", "enUs"],
+      "properties": {
+        "zhCn": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "enUs": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "outcome": { "enum": ["success", "failure", "partial", "canceled", "timedOut"] },
+    "impact": { "enum": ["info", "warning", "error"] },
+    "parameters": { "type": "object", "maxProperties": 32 }
+  }
+}

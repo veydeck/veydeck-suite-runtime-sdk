@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schemaVersion", "platformVersion", "suiteId", "instanceId", "endpoint", "credential", "capabilities"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "platformVersion": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "suiteId": { "type": "string", "minLength": 1 },
+    "instanceId": { "type": "string", "minLength": 1 },
+    "endpoint": { "type": "object" },
+    "credential": {
+      "type": "object",
+      "required": ["tokenPath"],
+      "properties": { "tokenPath": { "type": "string", "minLength": 1 } }
+    },
+    "capabilities": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+  }
+}

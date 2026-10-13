@@ -1,0 +1,21 @@
+[package]
+name = "veydeck-suite-runtime-sdk"
+version = "0.1.0-alpha.1"
+edition = "2024"
+license = "MIT"
+description = "Veydeck trusted suite backend runtime SDK"
+
+[lib]
+name = "veydeck_suite_runtime"
+
+[dependencies]
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-native-roots"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+semver = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["fs", "io-util", "macros", "net", "rt-multi-thread", "time"] }
+uuid = { version = "1", features = ["v7", "serde"] }
+
+[dev-dependencies]
+tempfile = "3"

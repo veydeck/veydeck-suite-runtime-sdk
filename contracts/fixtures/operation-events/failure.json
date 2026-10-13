@@ -1,0 +1,13 @@
+{
+  "eventId": "0198f021-7f1a-7000-8000-000000000002",
+  "operationContextId": null,
+  "eventCode": "scan_failed",
+  "eventLabel": { "zhCn": "扫描失败", "enUs": "Scan failed" },
+  "outcome": "failure",
+  "impact": "error",
+  "target": { "kind": "scan_task", "id": "task-1", "displayName": null, "ownership": null },
+  "taskId": "task-1",
+  "parameters": {},
+  "errorCode": "SCAN_FAILED",
+  "errorSummary": "目标不可达"
+}

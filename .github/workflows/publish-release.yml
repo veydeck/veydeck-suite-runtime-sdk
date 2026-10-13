@@ -1,0 +1,165 @@
+name: Publish Runtime SDK Release
+
+run-name: "${{ inputs.sdk }} SDK ${{ inputs.version }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      sdk:
+        description: Runtime SDK to publish
+        required: true
+        type: choice
+        options:
+          - rust
+          - python
+      version:
+        description: Package version without a tag prefix, for example 0.1.0-alpha.1
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: "runtime-sdk-release-${{ inputs.sdk }}-${{ inputs.version }}"
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require main branch
+        env:
+          RELEASE_REF: ${{ github.ref }}
+        shell: bash
+        run: |
+          if [ "$RELEASE_REF" != "refs/heads/main" ]; then
+            echo "Releases must be published from main, got: $RELEASE_REF"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release
+        id: release
+        env:
+          RELEASE_SDK: ${{ inputs.sdk }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
+            echo "Invalid version: $RELEASE_VERSION"
+            exit 1
+          fi
+
+          case "$RELEASE_SDK" in
+            rust)
+              MANIFEST="packages/rust/Cargo.toml"
+              TAG="rust-$RELEASE_VERSION"
+              RELEASE_NAME="Rust SDK $RELEASE_VERSION"
+              ;;
+            python)
+              MANIFEST="packages/python/pyproject.toml"
+              TAG="python-$RELEASE_VERSION"
+              RELEASE_NAME="Python SDK $RELEASE_VERSION"
+              ;;
+            *)
+              echo "Unsupported SDK: $RELEASE_SDK"
+              exit 1
+              ;;
+          esac
+
+          PACKAGE_VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' "$MANIFEST" | head -n 1)"
+          if [ "$PACKAGE_VERSION" != "$RELEASE_VERSION" ]; then
+            echo "Version mismatch: input=$RELEASE_VERSION, $MANIFEST=$PACKAGE_VERSION"
+            exit 1
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "release_name=$RELEASE_NAME" >> "$GITHUB_OUTPUT"
+          if [[ "$RELEASE_VERSION" == *-* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Reject existing tag or release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag already exists: $RELEASE_TAG"
+            exit 1
+          fi
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release already exists: $RELEASE_TAG"
+            exit 1
+          fi
+
+      - name: Set up Rust
+        if: inputs.sdk == 'rust'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Validate Rust SDK
+        if: inputs.sdk == 'rust'
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy -p veydeck-suite-runtime-sdk --all-targets --all-features -- -D warnings
+          cargo test -p veydeck-suite-runtime-sdk --all-targets
+          cargo package -p veydeck-suite-runtime-sdk
+          PACKAGE_PATH="$(find target/package -maxdepth 1 -type f -name 'veydeck-suite-runtime-sdk-*.crate' -print -quit)"
+          PACKAGE_DIR="$(mktemp -d)"
+          tar -xzf "$PACKAGE_PATH" -C "$PACKAGE_DIR"
+          PACKAGE_MANIFEST="$(find "$PACKAGE_DIR" -mindepth 2 -maxdepth 2 -name Cargo.toml -print -quit)"
+          cargo test --manifest-path "$PACKAGE_MANIFEST" --all-targets
+
+      - name: Set up Python
+        if: inputs.sdk == 'python'
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Set up uv
+        if: inputs.sdk == 'python'
+        uses: astral-sh/setup-uv@v7
+
+      - name: Validate Python SDK
+        if: inputs.sdk == 'python'
+        shell: bash
+        run: |
+          uv sync --project packages/python --all-groups --frozen
+          uv run --project packages/python ruff format --check packages/python
+          uv run --project packages/python ruff check packages/python
+          uv run --project packages/python mypy packages/python/src packages/python/tests
+          uv run --project packages/python pytest packages/python
+          BUILD_DIR="$(mktemp -d)"
+          uv build --project packages/python --out-dir "$BUILD_DIR"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SDK: ${{ inputs.sdk }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_NAME: ${{ steps.release.outputs.release_name }}
+          RELEASE_PRERELEASE: ${{ steps.release.outputs.prerelease }}
+        shell: bash
+        run: |
+          printf -v RELEASE_NOTES 'Veydeck %s Runtime SDK source release.\n\nPackage version: `%s`\n\nCommit: `%s`' \
+            "$RELEASE_SDK" "$RELEASE_VERSION" "$GITHUB_SHA"
+          RELEASE_FLAGS=()
+          if [ "$RELEASE_PRERELEASE" = "true" ]; then
+            RELEASE_FLAGS+=(--prerelease)
+          fi
+          gh release create "$RELEASE_TAG" \
+            --target "$GITHUB_SHA" \
+            --title "$RELEASE_NAME" \
+            --notes "$RELEASE_NOTES" \
+            "${RELEASE_FLAGS[@]}"

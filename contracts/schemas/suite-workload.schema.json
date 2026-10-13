@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "transport": { "enum": ["tcp", "udp"] },
+    "port": {
+      "type": "object",
+      "required": ["endpointId", "hostPort", "containerPort", "protocol"],
+      "properties": {
+        "endpointId": { "type": "string", "minLength": 1 },
+        "hostPort": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "containerPort": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "protocol": { "$ref": "#/$defs/transport" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "required": ["workloadKind", "workloadName", "image", "ports", "env", "configJson", "resources"],
+  "properties": {
+    "workloadKind": { "type": "string", "minLength": 1 },
+    "workloadName": { "type": "string", "minLength": 1 },
+    "image": { "type": "string", "minLength": 1 },
+    "ports": { "type": "array", "items": { "$ref": "#/$defs/port" } },
+    "env": { "type": "object" },
+    "configJson": {},
+    "resources": {
+      "type": "object",
+      "properties": {
+        "memoryMb": { "type": ["integer", "null"], "minimum": 1 },
+        "cpuShares": { "type": ["integer", "null"], "minimum": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

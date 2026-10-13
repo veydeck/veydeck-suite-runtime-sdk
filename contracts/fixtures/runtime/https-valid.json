@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "platformVersion": "0.1.0-alpha.1",
+  "suiteId": "veydeck.packet",
+  "instanceId": "instance-2",
+  "endpoint": {
+    "kind": "https",
+    "baseUrl": "https://host.docker.internal:9443",
+    "caPath": "/run/veydeck-agent/agent-ca.crt",
+    "clientCertPath": "/run/veydeck-agent/agent-client.crt",
+    "clientKeyPath": "/run/veydeck-agent/agent-client.key"
+  },
+  "credential": { "tokenPath": "/run/veydeck-agent/access-token" },
+  "capabilities": ["operation-logs.write"]
+}

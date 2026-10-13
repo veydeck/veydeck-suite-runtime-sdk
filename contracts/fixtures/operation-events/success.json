@@ -1,0 +1,13 @@
+{
+  "eventId": "0198f021-7f1a-7000-8000-000000000001",
+  "operationContextId": "0198f021-7f1a-7000-8000-000000000010",
+  "eventCode": "scan_submitted",
+  "eventLabel": { "zhCn": "提交扫描", "enUs": "Submit scan" },
+  "outcome": "success",
+  "impact": "info",
+  "target": { "kind": "scan_task", "id": "task-1", "displayName": "192.0.2.0/24", "ownership": null },
+  "taskId": "task-1",
+  "parameters": { "hostCount": 254.0 },
+  "errorCode": null,
+  "errorSummary": null
+}

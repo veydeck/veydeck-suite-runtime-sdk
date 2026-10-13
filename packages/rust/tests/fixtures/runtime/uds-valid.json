@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "platformVersion": "0.1.0-alpha.1",
+  "suiteId": "veydeck.host-scanner",
+  "instanceId": "instance-1",
+  "endpoint": { "kind": "unix", "socketPath": "/run/veydeck-agent.sock", "baseUrl": "http://local" },
+  "credential": { "tokenPath": "/run/veydeck-agent/access-token" },
+  "capabilities": ["operation-logs.write"]
+}

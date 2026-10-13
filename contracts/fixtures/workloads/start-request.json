@@ -1,0 +1,12 @@
+{
+  "workloadKind": "simulation-rule",
+  "workloadName": "dns-decoy",
+  "image": "guowenju/veydeck-protocol-simulation-engine:0.1.0-alpha.1",
+  "ports": [
+    { "endpointId": "dns-tcp", "hostPort": 1053, "containerPort": 53, "protocol": "tcp" },
+    { "endpointId": "dns-udp", "hostPort": 1053, "containerPort": 53, "protocol": "udp" }
+  ],
+  "env": {},
+  "configJson": { "protocol": "dns" },
+  "resources": { "memoryMb": 256, "cpuShares": 256 }
+}
